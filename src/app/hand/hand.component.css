@@ -1,0 +1,10 @@
+.hand-wrapper {
+
+}
+
+.hand-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
