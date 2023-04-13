@@ -10,3 +10,20 @@ export function shuffleArray<T>(array: T[]) {
     array[j] = temp;
   }
 }
+
+export function countElementsInArray(array: number[]): object {
+  const elementCount = {}
+  for (let i = 0; i < array.length; i++) {
+    const element = array[i];
+    // @ts-ignore
+    if (elementCount[element]) {
+      // @ts-ignore
+      elementCount[element] += 1;
+    } else {
+      // @ts-ignore
+      elementCount[element] = 1;
+    }
+  }
+  return elementCount;
+
+}

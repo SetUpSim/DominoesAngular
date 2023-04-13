@@ -1,4 +1,5 @@
 export enum GameState {
+  NotStarted,
   InProgress,
   FirstPlayerWon,
   SecondPlayerWon,
@@ -7,6 +8,6 @@ export enum GameState {
 
 export enum GameMode {
   PvP, // player vs player
-  CvP, // computer vs player
+  PvC, // computer vs player
   CvC // computer vs computer
 }

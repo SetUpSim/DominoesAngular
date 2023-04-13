@@ -1,8 +1,9 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {DominoeTileModel} from '../dominoe-tile/model/DominoeTileModel';
-import {shuffleArray} from '../../utils/utils';
+import {countElementsInArray, shuffleArray} from '../../utils/utils';
 import {v4 as uuidv4} from 'uuid'
 import {GameMode, GameState} from './enums/GameEnums';
+import {GameManagerService} from '../game-manager.service';
 
 @Component({
   selector: 'app-game',
@@ -22,9 +23,13 @@ export class GameComponent implements OnInit {
   tilesInStock: DominoeTileModel[] = [];
 
   isFirstPlayersTurn = true;
+  readonly computerTurnDelay = 3000
 
   ngOnInit() {
     this.initNewGame();
+  }
+
+  constructor(private readonly managerService: GameManagerService) {
   }
 
   initNewGame() {
@@ -33,6 +38,26 @@ export class GameComponent implements OnInit {
     this.tilesInSecondHand = this.distributeHand(set);
     this.tilesInStock = set;
     this.isFirstPlayersTurn = true;
+
+    switch (this.gameMode) {
+      case GameMode.PvC:
+        this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false)
+        );
+        break;
+      case GameMode.CvC:
+        this.managerService.firstHandTurn.subscribe(() => this.makeComputerMove(true))
+        this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false));
+        break;
+      default:
+        break;
+    }
+
+    this.managerService.gameEnded.subscribe(() => {
+      this.managerService.firstHandTurn.unsubscribe();
+      this.managerService.secondHandTurn.unsubscribe();
+    })
+
+    this.managerService.firstHandTurn.emit();
   }
 
   private distributeHand(ofTiles: DominoeTileModel[]): DominoeTileModel[] {
@@ -98,15 +123,17 @@ export class GameComponent implements OnInit {
   onFirstHandSelect(event: DominoeTileModel) {
     const possibleInsert = this.isTurnValid(event)
     if (possibleInsert === PossibleInsert.Both) {
-      const toStart = this.promptUserStartOrEnd();
+      const toStart = this.gameMode === GameMode.PvP ? this.promptUserStartOrEnd() : true;
       this.makeFirstHandTurn(event, toStart ? PossibleInsert.Start : PossibleInsert.End);
       this.checkHandsForWinner();
       this.isFirstPlayersTurn = false;
+      return;
     }
     if (possibleInsert !== PossibleInsert.None) {
       this.makeFirstHandTurn(event, possibleInsert)
       this.checkHandsForWinner();
       this.isFirstPlayersTurn = false;
+      return;
     }
 
     console.log('This turn is invalid! Not possible to insert the following tile to board: ', event);
@@ -122,6 +149,8 @@ export class GameComponent implements OnInit {
     } else if (insert === PossibleInsert.End) {
       this.insertTileToEndOfBoard(model);
     }
+
+    this.managerService.emitSecondHandTurn();
   }
 
   onSecondHandSelect(event: DominoeTileModel) {
@@ -131,11 +160,13 @@ export class GameComponent implements OnInit {
       this.makeSecondHandTurn(event, toStart ? PossibleInsert.Start : PossibleInsert.End);
       this.checkHandsForWinner();
       this.isFirstPlayersTurn = true;
+      return;
     }
     if (possibleInsert !== PossibleInsert.None) {
       this.makeSecondHandTurn(event, possibleInsert)
       this.checkHandsForWinner();
       this.isFirstPlayersTurn = true;
+      return;
     }
 
     console.log('This turn is invalid! Not possible to insert the following tile to board: ', event);
@@ -151,6 +182,8 @@ export class GameComponent implements OnInit {
     } else if (insert === PossibleInsert.End) {
       this.insertTileToEndOfBoard(model);
     }
+
+    this.managerService.emitFirstHandTurn();
   }
 
   private insertTileToStartOfBoard(tile: DominoeTileModel) {
@@ -212,19 +245,101 @@ export class GameComponent implements OnInit {
     }
     if (forFirstPlayer) {
       this.tilesInFirstHand.push(toDraw);
+      this.managerService.emitFirstHandTurn();
     } else {
       this.tilesInSecondHand.push(toDraw);
-
+      this.managerService.emitSecondHandTurn();
     }
   }
 
   getHandStyle(forFirstPlayerHand: boolean): object {
-    const predicate = (this.isFirstPlayersTurn && forFirstPlayerHand) ||
-      (!this.isFirstPlayersTurn && !forFirstPlayerHand)
-    return predicate ? {} : {
+    const blurred = {
       'pointer-events': 'none',
       'filter': 'blur(10px)'
+    };
+
+    switch (this.gameMode) {
+      case GameMode.PvP:
+        const predicate = (this.isFirstPlayersTurn && forFirstPlayerHand) ||
+          (!this.isFirstPlayersTurn && !forFirstPlayerHand);
+        return predicate ? {} : blurred;
+      case GameMode.CvC:
+        return {};
+      case GameMode.PvC:
+        return forFirstPlayerHand ? {} : blurred;
     }
+  }
+
+  private checkHandsForWinner() {
+    const firstHandEmpty = this.tilesInFirstHand.length === 0;
+    const secondHandEmpty = this.tilesInSecondHand.length === 0;
+
+    if (firstHandEmpty) {
+      this.gameState = GameState.FirstPlayerWon;
+      this.managerService.emitEndGame();
+    } else if (secondHandEmpty) {
+      this.gameState = GameState.SecondPlayerWon;
+      this.managerService.emitEndGame();
+    }
+  }
+
+  checkStockForTie() {
+    if (this.tilesInStock.length === 0) {
+      this.gameState = GameState.Tie;
+    }
+  }
+
+  makeComputerMove(asFirstPlayer: boolean) {
+    this.isFirstPlayersTurn = asFirstPlayer;
+    setTimeout(() => {
+      const hand = asFirstPlayer ? this.tilesInFirstHand : this.tilesInSecondHand;
+      const func = (m: DominoeTileModel) => [m.tileStartValue, m.tileEndValue]
+
+      const numbersArr = hand.map(func).concat(
+        this.tilesOnBoard.map(func)
+      );
+
+      const ranks = countElementsInArray(numbersArr.flat());
+      const handRanked = {}
+
+      for (let tile of hand) {
+        // @ts-ignore
+        handRanked[tile.id] = ranks[tile.tileStartValue] + ranks[tile.tileEndValue];
+      }
+
+      let highestScored: string | undefined;
+      let highestScore = 0;
+      for (let tileId of Object.keys(handRanked)) {
+        // @ts-ignore
+        const tileRank = handRanked[tileId];
+        const isValid = this.isTurnValid(hand.find(m => m.id === tileId)!)
+        if (tileRank > highestScore && isValid !== PossibleInsert.None) {
+          highestScored = tileId;
+          highestScore = tileRank;
+        }
+      }
+
+      if (highestScore) {
+        const tile = hand.find(m => m.id === highestScored)!
+        console.log(`Computer ${asFirstPlayer ? 1 : 2} selected ${tile.tileStartValue}:${tile.tileEndValue}`);
+        const position = this.isTurnValid(tile);
+        const insertOption = position === PossibleInsert.Both ? PossibleInsert.Start : position
+        if (asFirstPlayer) {
+          this.makeFirstHandTurn(tile, insertOption)
+          this.checkHandsForWinner();
+        } else {
+          this.makeSecondHandTurn(tile, insertOption)
+          this.checkHandsForWinner();
+        }
+        if (this.gameMode === GameMode.PvC) {
+          this.isFirstPlayersTurn = !asFirstPlayer;
+        }
+
+      } else {
+        console.log(`Computer ${asFirstPlayer ? 1 : 2} draws`);
+        this.drawTileFromStock(asFirstPlayer);
+      }
+    }, this.computerTurnDelay);
   }
 
   getNgStyle(): object {
@@ -234,23 +349,6 @@ export class GameComponent implements OnInit {
       }
     }
     return {}
-  }
-
-  private checkHandsForWinner() {
-    const firstHandEmpty = this.tilesInFirstHand.length === 0;
-    const secondHandEmpty = this.tilesInSecondHand.length === 0;
-
-    if (firstHandEmpty) {
-      this.gameState = GameState.FirstPlayerWon;
-    } else if (secondHandEmpty) {
-      this.gameState = GameState.SecondPlayerWon;
-    }
-  }
-
-  checkStockForTie() {
-    if (this.tilesInStock.length === 0) {
-      this.gameState = GameState.Tie;
-    }
   }
 }
 
