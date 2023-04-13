@@ -20,6 +20,11 @@
   border-bottom: 2px solid black;
 }
 
+.start-vertical.reversed {
+  border-top: 2px solid black;
+  border-bottom: none;
+}
+
 .end-vertical {
   height: 50%;
 }
@@ -27,6 +32,11 @@
 .start-horizontal {
   width: 50%;
   border-right: 2px solid black;
+}
+
+.start-horizontal.reversed {
+  border-left: 2px solid black;
+  border-right: none;
 }
 
 .end-horizontal {

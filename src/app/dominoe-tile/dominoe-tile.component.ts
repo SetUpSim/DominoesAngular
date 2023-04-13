@@ -1,6 +1,5 @@
-import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {DominoeTileModel} from './model/DominoeTileModel';
-import {convertTileModelToUnicodeChar} from '../../utils/utils';
 
 @Component({
   selector: 'app-dominoe-tile',
@@ -9,6 +8,7 @@ import {convertTileModelToUnicodeChar} from '../../utils/utils';
 })
 export class DominoeTileComponent {
   @Input() tileModel: DominoeTileModel | undefined
+  @Output() tileClicked = new EventEmitter<string>()
 
   getStyles(): any {
     if (!this.tileModel) {

@@ -1,0 +1,13 @@
+.board-wrapper {
+  width: 80vw;
+  height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-tiles-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

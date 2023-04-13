@@ -1,6 +1,6 @@
-<div class="hand-wrapper">
-  <p>{{playerName}}'s hand</p>
+<div class="hand-wrapper" [ngStyle]="getNgStyle()">
+  <p id="nameLabel">{{playerName}}'s hand</p>
   <div class="hand-content-wrapper">
-    <app-dominoe-tile *ngFor="let model of hand" [tileModel]="model"/>
+    <app-dominoe-tile *ngFor="let model of hand" [tileModel]="model" (tileClicked)="tileClicked($event)"/>
   </div>
 </div>

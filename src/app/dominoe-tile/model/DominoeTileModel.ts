@@ -1,4 +1,5 @@
 export interface DominoeTileModel {
+  id: string
   tileStartValue: TileSideValue,
   tileEndValue: TileSideValue,
   placedInReverse: Boolean,

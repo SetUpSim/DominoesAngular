@@ -1,8 +1,18 @@
-<div class="tile" [ngStyle]="getStyles()">
-  <div [ngClass]="tileModel?.placedVertically ? 'start-vertical' : 'start-horizontal'">
-    <p class="tile-value">{{tileModel?.tileStartValue}}</p>
-  </div>
-  <div [ngClass]="tileModel?.placedVertically ? 'end-vertical' : 'end-horizontal'">
-    <p class="tile-value">{{tileModel?.tileEndValue}}</p>
-  </div>
+<div class="tile" [ngStyle]="getStyles()" (click)="tileClicked.emit(tileModel?.id)">
+  <ng-container *ngIf="!tileModel?.placedInReverse else reversed">
+    <div [ngClass]="tileModel?.placedVertically ? 'start-vertical' : 'start-horizontal'">
+      <p class="tile-value">{{tileModel?.tileStartValue}}</p>
+    </div>
+    <div [ngClass]="tileModel?.placedVertically ? 'end-vertical' : 'end-horizontal'">
+      <p class="tile-value">{{tileModel?.tileEndValue}}</p>
+    </div>
+  </ng-container>
+  <ng-template #reversed>
+    <div [ngClass]="tileModel?.placedVertically ? 'end-vertical' : 'end-horizontal'">
+      <p class="tile-value">{{tileModel?.tileEndValue}}</p>
+    </div>
+    <div [ngClass]="tileModel?.placedVertically ? ['start-vertical', 'reversed'] : ['start-horizontal', 'reversed']">
+      <p class="tile-value">{{tileModel?.tileStartValue}}</p>
+    </div>
+  </ng-template>
 </div>
