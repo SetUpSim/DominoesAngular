@@ -1,9 +1,11 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {DominoeTileModel} from '../dominoe-tile/model/DominoeTileModel';
-import {countElementsInArray, shuffleArray} from '../../utils/utils';
+import {shuffleArray} from '../../utils/utils';
 import {v4 as uuidv4} from 'uuid'
-import {GameMode, GameState} from './enums/GameEnums';
+import {GameMode, GameState, PossibleInsert} from './enums/GameEnums';
 import {GameManagerService} from '../game-manager.service';
+import {ComputerPlayerService} from '../computer-player.service';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-game',
@@ -29,7 +31,8 @@ export class GameComponent implements OnInit {
     this.initNewGame();
   }
 
-  constructor(private readonly managerService: GameManagerService) {
+  constructor(private readonly managerService: GameManagerService,
+              private readonly computerPlayerService: ComputerPlayerService) {
   }
 
   initNewGame() {
@@ -39,22 +42,26 @@ export class GameComponent implements OnInit {
     this.tilesInStock = set;
     this.isFirstPlayersTurn = true;
 
+    const subscriptions: Subscription[] = []
+
     switch (this.gameMode) {
       case GameMode.PvC:
-        this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false)
-        );
+        const subscription = this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false));
+        subscriptions.push(subscription)
         break;
       case GameMode.CvC:
-        this.managerService.firstHandTurn.subscribe(() => this.makeComputerMove(true))
-        this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false));
+        const subscriptionFirst = this.managerService.firstHandTurn.subscribe(() => this.makeComputerMove(true))
+        const subscriptionSecond = this.managerService.secondHandTurn.subscribe(() => this.makeComputerMove(false));
+        subscriptions.push(subscriptionFirst, subscriptionSecond)
         break;
       default:
         break;
     }
 
     this.managerService.gameEnded.subscribe(() => {
-      this.managerService.firstHandTurn.unsubscribe();
-      this.managerService.secondHandTurn.unsubscribe();
+      for (let subscription of subscriptions) {
+        subscription.unsubscribe();
+      }
     })
 
     this.managerService.firstHandTurn.emit();
@@ -123,7 +130,7 @@ export class GameComponent implements OnInit {
   onFirstHandSelect(event: DominoeTileModel) {
     const possibleInsert = this.isTurnValid(event)
     if (possibleInsert === PossibleInsert.Both) {
-      const toStart = this.gameMode === GameMode.PvP ? this.promptUserStartOrEnd() : true;
+      const toStart = this.gameMode === GameMode.PvP || this.gameMode === GameMode.PvC && this.isFirstPlayersTurn ? this.promptUserStartOrEnd() : true;
       this.makeFirstHandTurn(event, toStart ? PossibleInsert.Start : PossibleInsert.End);
       this.checkHandsForWinner();
       this.isFirstPlayersTurn = false;
@@ -253,18 +260,21 @@ export class GameComponent implements OnInit {
   }
 
   getHandStyle(forFirstPlayerHand: boolean): object {
+    const disabled = {
+      'pointer-events': 'none'
+    };
     const blurred = {
-      'pointer-events': 'none',
+      ...disabled,
       'filter': 'blur(10px)'
     };
+    const predicate = (this.isFirstPlayersTurn && forFirstPlayerHand) ||
+      (!this.isFirstPlayersTurn && !forFirstPlayerHand);
 
     switch (this.gameMode) {
       case GameMode.PvP:
-        const predicate = (this.isFirstPlayersTurn && forFirstPlayerHand) ||
-          (!this.isFirstPlayersTurn && !forFirstPlayerHand);
         return predicate ? {} : blurred;
       case GameMode.CvC:
-        return {};
+        return disabled;
       case GameMode.PvC:
         return forFirstPlayerHand ? {} : blurred;
     }
@@ -293,52 +303,30 @@ export class GameComponent implements OnInit {
     this.isFirstPlayersTurn = asFirstPlayer;
     setTimeout(() => {
       const hand = asFirstPlayer ? this.tilesInFirstHand : this.tilesInSecondHand;
-      const func = (m: DominoeTileModel) => [m.tileStartValue, m.tileEndValue]
 
-      const numbersArr = hand.map(func).concat(
-        this.tilesOnBoard.map(func)
-      );
+      this.computerPlayerService.decideComputerMove(hand, this.tilesOnBoard, this.isTurnValid.bind(this)).then((tileDecided) => {
+        if (tileDecided) {
+          console.log(`Computer ${asFirstPlayer ? 1 : 2} selected ${tileDecided.tileStartValue}:${tileDecided.tileEndValue}`);
+          const position = this.isTurnValid(tileDecided);
+          const insertOption = position === PossibleInsert.Both ? PossibleInsert.Start : position
+          if (asFirstPlayer) {
+            this.makeFirstHandTurn(tileDecided, insertOption)
+            this.checkHandsForWinner();
+          } else {
+            this.makeSecondHandTurn(tileDecided, insertOption)
+            this.checkHandsForWinner();
+          }
+          if (this.gameMode === GameMode.PvC) {
+            this.isFirstPlayersTurn = !asFirstPlayer;
+          }
 
-      const ranks = countElementsInArray(numbersArr.flat());
-      const handRanked = {}
-
-      for (let tile of hand) {
-        // @ts-ignore
-        handRanked[tile.id] = ranks[tile.tileStartValue] + ranks[tile.tileEndValue];
-      }
-
-      let highestScored: string | undefined;
-      let highestScore = 0;
-      for (let tileId of Object.keys(handRanked)) {
-        // @ts-ignore
-        const tileRank = handRanked[tileId];
-        const isValid = this.isTurnValid(hand.find(m => m.id === tileId)!)
-        if (tileRank > highestScore && isValid !== PossibleInsert.None) {
-          highestScored = tileId;
-          highestScore = tileRank;
-        }
-      }
-
-      if (highestScore) {
-        const tile = hand.find(m => m.id === highestScored)!
-        console.log(`Computer ${asFirstPlayer ? 1 : 2} selected ${tile.tileStartValue}:${tile.tileEndValue}`);
-        const position = this.isTurnValid(tile);
-        const insertOption = position === PossibleInsert.Both ? PossibleInsert.Start : position
-        if (asFirstPlayer) {
-          this.makeFirstHandTurn(tile, insertOption)
-          this.checkHandsForWinner();
         } else {
-          this.makeSecondHandTurn(tile, insertOption)
-          this.checkHandsForWinner();
+          console.log(`Computer ${asFirstPlayer ? 1 : 2} draws`);
+          this.drawTileFromStock(asFirstPlayer);
         }
-        if (this.gameMode === GameMode.PvC) {
-          this.isFirstPlayersTurn = !asFirstPlayer;
-        }
+      });
 
-      } else {
-        console.log(`Computer ${asFirstPlayer ? 1 : 2} draws`);
-        this.drawTileFromStock(asFirstPlayer);
-      }
+
     }, this.computerTurnDelay);
   }
 
@@ -350,11 +338,4 @@ export class GameComponent implements OnInit {
     }
     return {}
   }
-}
-
-enum PossibleInsert {
-  End,
-  Start,
-  Both,
-  None
 }

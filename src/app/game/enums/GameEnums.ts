@@ -11,3 +11,10 @@ export enum GameMode {
   PvC, // computer vs player
   CvC // computer vs computer
 }
+
+export enum PossibleInsert {
+  End,
+  Start,
+  Both,
+  None
+}

@@ -1,13 +1,14 @@
 import {Component} from '@angular/core';
 import {GameMode, GameState} from './game/enums/GameEnums';
 import {GameManagerService} from './game-manager.service';
+import {ComputerPlayerService} from './computer-player.service';
 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  providers: [GameManagerService]
+  providers: [GameManagerService, ComputerPlayerService]
 })
 export class AppComponent {
   title = 'Dominoes';
