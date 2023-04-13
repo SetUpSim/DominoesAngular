@@ -1,3 +1,17 @@
 root {
   width: 100%;
 }
+
+.board-wrapper {
+  display: flex;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.board-wrapper > app-infopanel {
+  width: 20%;
+}
+
+.board-wrapper > app-board {
+  width: 80%;
+}

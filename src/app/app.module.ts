@@ -6,6 +6,7 @@ import {DominoeTileComponent} from './dominoe-tile/dominoe-tile.component';
 import { HandComponent } from './hand/hand.component';
 import { BoardComponent } from './board/board.component';
 import { GameComponent } from './game/game.component';
+import { InfopanelComponent } from './infopanel/infopanel.component';
 
 @NgModule({
   declarations: [
@@ -13,7 +14,8 @@ import { GameComponent } from './game/game.component';
     DominoeTileComponent,
     HandComponent,
     BoardComponent,
-    GameComponent
+    GameComponent,
+    InfopanelComponent
   ],
   imports: [
     BrowserModule

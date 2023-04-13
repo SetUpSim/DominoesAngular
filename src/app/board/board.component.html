@@ -1,5 +1,5 @@
 <div class="board-wrapper">
   <div class="board-tiles-wrapper">
-    <app-dominoe-tile *ngFor="let model of tiles" [tileModel]="model"/>
+    <app-dominoe-tile *ngFor="let model of tiles; let index = index" [ngClass]="getBoardTileClass(index)" [tileModel]="model"/>
   </div>
 </div>

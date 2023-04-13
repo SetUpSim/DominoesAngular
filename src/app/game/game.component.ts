@@ -19,6 +19,10 @@ export class GameComponent implements OnInit {
 
 
   ngOnInit() {
+    this.initNewGame();
+  }
+
+  initNewGame() {
     const set = this.generateSetOfTiles();
     this.tilesInFirstHand = this.distributeHand(set);
     this.tilesInSecondHand = this.distributeHand(set);

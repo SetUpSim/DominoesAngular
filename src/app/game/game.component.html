@@ -1,3 +1,6 @@
 <app-hand playerName="Juan" [hand]="tilesInFirstHand" (tileSelected)="onFistHandSelect($event)"/>
-<app-board [tiles]="tilesOnBoard"/>
+<div class="board-wrapper">
+  <app-infopanel [turningPlayerName]="'ssdsadgasgdsagsdgsadg'" [dequeToCount]="tilesInDeque"/>
+  <app-board [tiles]="tilesOnBoard"/>
+</div>
 <app-hand playerName="Illia" [hand]="tilesInSecondHand" (tileSelected)="onSecondHandSelect($event)"/>
