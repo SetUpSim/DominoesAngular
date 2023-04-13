@@ -13,7 +13,7 @@ export class GameComponent implements OnInit {
   tilesInFirstHand: DominoeTileModel[] = [];
   tilesInSecondHand: DominoeTileModel[] = [];
   tilesOnBoard: DominoeTileModel[] = [];
-  tilesInDeque: DominoeTileModel[] = [];
+  tilesInStock: DominoeTileModel[] = [];
 
   @Input() gameMode: GameMode = GameMode.PvP
 
@@ -26,14 +26,14 @@ export class GameComponent implements OnInit {
     const set = this.generateSetOfTiles();
     this.tilesInFirstHand = this.distributeHand(set);
     this.tilesInSecondHand = this.distributeHand(set);
-    this.tilesInDeque = set;
+    this.tilesInStock = set;
   }
 
   private distributeHand(ofTiles: DominoeTileModel[]): DominoeTileModel[] {
     const length = ofTiles.length;
     if (!(length === 28 || length === 21)) {
       throw {
-        message: `Invalid game state while distribution, there is ${ofTiles.length} tiles in deque`
+        message: `Invalid game state while distribution, there is ${ofTiles.length} tiles in stock`
       };
     }
     const spliced = ofTiles.splice(0, 7);

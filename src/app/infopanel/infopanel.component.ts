@@ -8,5 +8,5 @@ import {DominoeTileModel} from '../dominoe-tile/model/DominoeTileModel';
 })
 export class InfopanelComponent {
   @Input() turningPlayerName: string | undefined;
-  @Input() dequeToCount: DominoeTileModel[] | undefined;
+  @Input() stockToCount: DominoeTileModel[] | undefined;
 }
