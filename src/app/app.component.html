@@ -1,3 +1,4 @@
 <div class="container">
-  <app-game></app-game>
+  <app-modeselector *ngIf="!gameStarted" (modeSelected)="modeSelected($event)"></app-modeselector>
+  <app-game *ngIf="gameStarted" [gameMode]="gameMode!" [firstPlayerName]="'Illia'" [secondPlayerName]="'Juan'"></app-game>
 </div>

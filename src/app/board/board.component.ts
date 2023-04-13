@@ -15,12 +15,10 @@ export class BoardComponent {
     }
 
     if (index === 1) {
-      console.log(`${index}: delimited`)
       return ['delimited'];
     }
 
     if (index > 1 && index < this.tiles.length - 2) {
-      console.log(`${index}: collapsed`)
       return ['collapsed'];
     }
 

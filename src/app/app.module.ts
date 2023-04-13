@@ -7,6 +7,7 @@ import { HandComponent } from './hand/hand.component';
 import { BoardComponent } from './board/board.component';
 import { GameComponent } from './game/game.component';
 import { InfopanelComponent } from './infopanel/infopanel.component';
+import { ModeselectorComponent } from './modeselector/modeselector.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { InfopanelComponent } from './infopanel/infopanel.component';
     HandComponent,
     BoardComponent,
     GameComponent,
-    InfopanelComponent
+    InfopanelComponent,
+    ModeselectorComponent
   ],
   imports: [
     BrowserModule

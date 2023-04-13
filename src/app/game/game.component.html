@@ -1,6 +1,15 @@
-<app-hand playerName="Juan" [hand]="tilesInFirstHand" (tileSelected)="onFistHandSelect($event)"/>
-<div class="board-wrapper">
-  <app-infopanel [turningPlayerName]="'ssdsadgasgdsagsdgsadg'" [stockToCount]="tilesInStock"/>
-  <app-board [tiles]="tilesOnBoard"/>
+<div class="game-wrapper" [ngStyle]="getNgStyle()">
+  <app-hand [playerName]="firstPlayerName" [hand]="tilesInFirstHand" [ngStyle]="getHandStyle(true)"
+            (tileSelected)="onFirstHandSelect($event)"/>
+  <div class="board-wrapper">
+    <div class="controls-wrapper">
+      <app-infopanel [turningPlayerName]="isFirstPlayersTurn ? firstPlayerName : secondPlayerName"
+                     [stockToCount]="tilesInStock" [status]="gameState"/>
+      <button id="draw-button" (click)="drawTileFromStock(isFirstPlayersTurn)">Draw from stock</button>
+    </div>
+    <app-board [tiles]="tilesOnBoard"/>
+  </div>
+  <app-hand [playerName]="secondPlayerName" [hand]="tilesInSecondHand" [ngStyle]="getHandStyle(false)"
+            (tileSelected)="onSecondHandSelect($event)"/>
+
 </div>
-<app-hand playerName="Illia" [hand]="tilesInSecondHand" (tileSelected)="onSecondHandSelect($event)"/>
