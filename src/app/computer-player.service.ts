@@ -8,7 +8,7 @@ import {PossibleInsert} from './game/enums/GameEnums';
 })
 export class ComputerPlayerService {
 
-  private mode = ComputerPlayerMode.Prolog;
+  private mode = ComputerPlayerMode.JsImperative;
 
   constructor() {
   }
